@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Log4j2
 @Controller
 @RequestMapping("/upload")
-@PropertySource(value = "application.properties")
+@PropertySource(value = "classpath:application.properties")
 public class UploadController {
 
     // application.properties 에 있는 값
