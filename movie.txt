@@ -1,0 +1,152 @@
+-- 영화번호별 리뷰 개수와 평점 조회
+SELECT r.MOVIE_MNO, count(*), AVG(r.GRADE)  FROM REVIEW r GROUP BY r.movie_mno;
+
+
+-- 영화제목, 영화 리뷰의 평점/리뷰 개수 출력
+-- 영화 테이블과 조인한다면 group by 절은 넣을 필요가 없고 조인을 할 수 있으니
+SELECT m.*,(SELECT count(DISTINCT r.review_no) FROM REVIEW r  WHERE  r.movie_mno = m.MNO) AS reply_cnt,
+(SELECT AVG(r.grade) FROM REVIEW r  WHERE  r.movie_mno = m.MNO) AS review_grade
+FROM movie m;  
+
+
+-- 하나의 영화에 여러개의 이미지가 들어갈 수 있다.
+-- MOVIE_IMAGE 에서 영화 번호별 가장 최근에 삽입된 사진 아이디 추출
+-- 오라클은 GROUP BY 절에 사용된 컬럼 아니고서는 추출할 수 없음
+
+SELECT min(mi2.inum) FROM MOVIE_IMAGE mi2 GROUP BY mi2.MOVIE_MNO;
+
+-- 영화별 이미지 한개의 정보 가지고 나외(가장 작은 번호로)
+SELECT * 
+FROM MOVIE_IMAGE mi 
+WHERE MI.INUM in (SELECT min(mi2.inum) FROM MOVIE_IMAGE mi2 GROUP BY mi2.MOVIE_MNO); 
+
+
+-- 이 추출된 inum 을 가지고 MOVIE_IMAGE 정보 추출
+SELECT MI.INUM, MI.CREATED_DATE, MI.LAST_MODIFIED_DATE, MI.IMG_NAME, MI."PATH", MI.UUID, MI.MOVIE_MNO 
+FROM MOVIE_IMAGE mi 
+WHERE MI.INUM IN (SELECT min(mi2.inum) FROM MOVIE_IMAGE mi2 GROUP BY mi2.MOVIE_MNO);
+
+-- + 영화제목
+-- group by 대신에 where mi1.movie_mno = m.mno 로 대체해도 됨
+SELECT MI.INUM, MI.CREATED_DATE, MI.LAST_MODIFIED_DATE, MI.IMG_NAME, MI."PATH", MI.UUID, MI.MOVIE_MNO, m.TITLE 
+FROM MOVIE_IMAGE mi LEFT join movie m ON mi.MOVIE_MNO = m.MNO
+WHERE MI.INUM IN (SELECT min(mi2.inum) FROM MOVIE_IMAGE mi2  GROUP BY mi2.MOVIE_MNO);
+
+-- + 영화 리뷰의 평점/리뷰 개수 출력
+SELECT mi.*, m.*,
+(SELECT count(*) FROM REVIEW r  WHERE  r.movie_mno = m.MNO) AS reply_cnt,
+(SELECT AVG(r.GRADE) FROM REVIEW r  WHERE  r.movie_mno = m.MNO) AS review_grade
+FROM MOVIE_IMAGE mi LEFT  join movie m ON mi.MOVIE_MNO = m.MNO
+WHERE MI.INUM IN (SELECT min(mi2.inum) FROM MOVIE_IMAGE mi2 GROUP BY mi2.MOVIE_MNO);
+
+하다가 에러난 쿼리문 - dbeaver 에서는 잘 되는데
+@Query(value = "SELECT m.MNO,m.CREATED_DATE,m.TITLE,MI2.IMG_NAME,mi2.PATH,mi2.UUID, " +
+                     " (SELECT COUNT(DISTINCT r.review_no) FROM REVIEW r WHERE r.MOVIE_MNO =  m.MNO) " +
+                     " AS review_cnt, (SELECT AVG(r.GRADE) FROM REVIEW r WHERE r.MOVIE_MNO =  m.MNO) " +
+                     " FROM MOVIE m LEFT JOIN MOVIE_IMAGE mi2 ON M.MNO = MI2.MOVIE_MNO " +
+                     " WHERE mi2.INUM IN (SELECT min(mi.INUM) FROM MOVIE_IMAGE mi " +
+                     " GROUP BY mi.MOVIE_MNO)", nativeQuery = true)
+
+
+
+SELECT
+	M.MNO,
+	m.CREATED_DATE,
+	m.TITLE,
+	MI2.IMG_NAME,
+	mi2."PATH",
+	mi2.UUID,
+	(
+	SELECT
+		COUNT(DISTINCT r.review_no)
+	FROM
+		REVIEW r
+	WHERE
+		r.MOVIE_MNO = m.MNO) AS review_cnt,
+	(
+	SELECT
+		AVG(r.GRADE)
+	FROM
+		REVIEW r
+	WHERE
+		r.MOVIE_MNO = m.MNO) AS grade_avg
+FROM
+	MOVIE_IMAGE mi2
+LEFT JOIN MOVIE m ON
+	MI2.MOVIE_MNO = M.MNO
+WHERE
+	mi2.INUM IN (
+	SELECT
+		min(mi.INUM)
+	FROM
+		MOVIE_IMAGE mi
+	GROUP BY
+		mi.MOVIE_MNO)
+ORDER BY
+	mno desc;
+
+
+
+-- 위랑 같은 역할을 하는데 from 절 join구문
+SELECT
+	*
+FROM
+	MOVIE m
+LEFT JOIN (
+	SELECT
+		r.MOVIE_MNO,
+		COUNT(*),
+		AVG(r.GRADE)
+	FROM
+		REVIEW r
+	GROUP BY
+		r.MOVIE_MNO ) r1 
+ON
+	m.MNO = r1.movie_mno
+LEFT JOIN (
+	SELECT
+		mi2.*
+	FROM
+		MOVIE_IMAGE mi2
+	WHERE
+		mi2.INUM 
+IN (
+		SELECT
+			min(mi.INUM)
+		FROM
+			MOVIE_IMAGE mi
+		GROUP BY
+			mi.MOVIE_MNO)) A ON
+	m.MNO = A.movie_mno
+ORDER BY
+	mno DESC;
+
+
+
+-- 특정 영화의 정보+평균평점+리뷰 수 + 영화 이미지
+SELECT
+	M.MNO,
+	m.CREATED_DATE,
+	m.TITLE,
+	MI2.IMG_NAME,
+	mi2."PATH",
+	mi2.UUID,
+	(
+	SELECT
+		COUNT(DISTINCT r.review_no)
+	FROM
+		REVIEW r
+	WHERE
+		r.MOVIE_MNO = m.MNO) AS review_cnt,
+	(
+	SELECT
+		AVG(r.GRADE)
+	FROM
+		REVIEW r
+	WHERE
+		r.MOVIE_MNO = m.MNO) AS grade_avg
+FROM
+	MOVIE_IMAGE mi2
+LEFT JOIN MOVIE m ON
+	MI2.MOVIE_MNO = M.MNO
+WHERE MI2.MOVIE_MNO = 3;
