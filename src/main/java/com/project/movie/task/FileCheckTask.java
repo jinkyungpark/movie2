@@ -27,8 +27,8 @@ public class FileCheckTask {
     private MovieImageRepository movieImageRepository;
 
     // application.properties 에 있는 값
-    @Value("${upload.path}")
-    private String uploadPath;
+    // @Value("${upload.path}")
+    private String uploadPath = "/upload";
 
     // 전일자 폴더의 리스트 추출한 후 비교
     private String getFolderYesterDay() {

@@ -39,8 +39,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class UploadController {
 
     // application.properties 에 있는 값
-    @Value("${upload.path}")
-    private String uploadPath;
+    // @Value("${upload.path}")
+    private String uploadPath = "/upload";
 
     @PostMapping("/uploadAjax")
     public ResponseEntity<List<UploadResultDTO>> uploadFile(MultipartFile[] uploadFiles) {
