@@ -43,7 +43,7 @@ public class FileCheckTask {
 
     // 데이터베이스랑 일치하지 않는 파일이 존재한다면 삭제
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "* * 2 * * *")
     public void checkFiles() {
         log.info("file check task 시작....");
 
