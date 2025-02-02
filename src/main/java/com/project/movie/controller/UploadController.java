@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class UploadController {
 
     // application.properties 에 있는 값
-    @Value("${classpath:com.project.movie.upload.path}")
+    @Value("${com.project.movie.upload.path}")
     private String uploadPath;
 
     // @GetMapping("/uploadEx")
